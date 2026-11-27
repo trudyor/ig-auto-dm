@@ -14,23 +14,27 @@ const {
 } = process.env;
 
 // ─────────────────────────────────────────────────────────────
-// 자동화 규칙: 여기만 고치면 됩니다
-// keyword: 사람들이 댓글에 달면 발동할 단어 (소문자, 포함 여부로 매칭)
-// publicReply: 댓글에 자동으로 달 공개 답글 (빈 문자열이면 생략)
-// dm: 자동으로 보낼 DM 본문
+// 자동화 규칙: 여기만 고치면 됩니다 (게시물별 링크 방식)
+//
+// KEYWORD      : 이 단어가 댓글에 있으면 발동 (소문자, 포함 여부로 매칭)
+// POST_LINKS   : 게시물별 링크. "게시물ID": { publicReply, dm }
+//                게시물 ID는 실제 게시물을 올린 뒤 등록합니다.
+// DEFAULT_REPLY: POST_LINKS에 없는 게시물에 기본으로 나갈 답장
 // ─────────────────────────────────────────────────────────────
-const RULES = [
-  {
-    keyword: "링크",
-    publicReply: "DM 확인해주세요! 📩",
-    dm: "안녕하세요! 요청하신 링크 보내드려요 👉 https://example.com",
-  },
-  {
-    keyword: "정보",
-    publicReply: "메시지 보냈어요 🙌",
-    dm: "안녕하세요! 자세한 정보는 여기 있어요 👉 https://example.com/info",
-  },
-];
+const KEYWORD = "링크";
+
+const POST_LINKS = {
+  // 예시 (실제 게시물 올린 뒤 이렇게 등록):
+  // "17895695668004550": {
+  //   publicReply: "DM 확인해주세요! 📩",
+  //   dm: "A상품 링크예요 👉 https://example.com/a",
+  // },
+};
+
+const DEFAULT_REPLY = {
+  publicReply: "DM 확인해주세요! 📩",
+  dm: "안녕하세요! 요청하신 링크 보내드려요 👉 https://example.com",
+};
 
 const app = express();
 
@@ -97,18 +101,20 @@ async function handleComment(comment) {
   const text = (comment.text || "").toLowerCase();
   const commentId = comment.id;
   const commenterId = comment.from?.id;
+  const mediaId = comment.media?.id; // 이 댓글이 달린 게시물 ID
 
   // 내가 쓴 댓글이면 무시 (무한루프 방지)
   if (commenterId && String(commenterId) === String(IG_BUSINESS_ID)) return;
 
-  // 규칙 중 키워드가 포함된 첫 번째 규칙 찾기
-  const rule = RULES.find((r) => text.includes(r.keyword.toLowerCase()));
-  if (!rule) {
+  // 키워드가 없으면 건너뜀
+  if (!text.includes(KEYWORD.toLowerCase())) {
     console.log(`키워드 없음, 건너뜀: "${comment.text}"`);
     return;
   }
 
-  console.log(`🎯 키워드 "${rule.keyword}" 매칭 → DM 발송 시도`);
+  // 이 게시물에 등록된 링크가 있으면 그걸, 없으면 기본 답장 사용
+  const rule = POST_LINKS[mediaId] || DEFAULT_REPLY;
+  console.log(`🎯 키워드 "${KEYWORD}" 매칭 (게시물 ${mediaId}) → DM 발송 시도`);
 
   // 2-1) 공개 답글 (선택)
   if (rule.publicReply) {

@@ -31,10 +31,10 @@ const POST_LINKS = {
   // },
 };
 
-const DEFAULT_REPLY = {
-  publicReply: "DM 확인해주세요! 📩",
-  dm: "안녕하세요! 요청하신 링크 보내드려요 👉 https://smartstore.naver.com/chamingj",
-};
+// 등록 안 된 게시물에서 "링크" 댓글이 달렸을 때:
+//  - null  이면  아무 답장도 안 보냄 (지금 설정: 등록한 게시물에만 반응)
+//  - 객체면 그 게시물들에 공통으로 나갈 기본 답장
+const DEFAULT_REPLY = null;
 
 const app = express();
 
@@ -112,8 +112,15 @@ async function handleComment(comment) {
     return;
   }
 
-  // 이 게시물에 등록된 링크가 있으면 그걸, 없으면 기본 답장 사용
+  // 이 게시물에 등록된 링크가 있으면 그걸, 없으면 기본 답장(DEFAULT_REPLY) 사용
   const rule = POST_LINKS[mediaId] || DEFAULT_REPLY;
+
+  // 등록 안 된 게시물이고 기본 답장도 없으면 → 아무것도 안 함
+  if (!rule) {
+    console.log(`등록 안 된 게시물(${mediaId}) → 답장 안 함`);
+    return;
+  }
+
   console.log(`🎯 키워드 "${KEYWORD}" 매칭 (게시물 ${mediaId}) → DM 발송 시도`);
 
   // 2-1) 공개 답글 (선택)

@@ -33,7 +33,7 @@ const POST_LINKS = {
 
 const DEFAULT_REPLY = {
   publicReply: "DM 확인해주세요! 📩",
-  dm: "안녕하세요! 요청하신 링크 보내드려요 👉 https://example.com",
+  dm: "안녕하세요! 요청하신 링크 보내드려요 👉 https://smartstore.naver.com/chamingj",
 };
 
 const app = express();
